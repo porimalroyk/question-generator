@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>পাঠ্যবই থেকে প্রশ্ন তৈরি - AI Question Generator</title>
+    <!-- Tailwind CSS for UI Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js library for reading PDF directly in Browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kalpurush&family=Hind+Siliguri:wght@400;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', 'Kalpurush', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-700 text-white py-4 px-6 shadow-md">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-yellow-400"></i> স্মার্ট বোর্ড প্রশ্ন জেনারেটর
+            </h1>
+            <span class="text-xs bg-blue-800 px-3 py-1 rounded-full text-blue-200">Powered by Gemini AI</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto w-full p-4 md:p-6 flex-grow">
+        
+        <!-- API Key & Settings Panel -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <h2 class="text-lg font-semibold text-slate-700 mb-4 border-b pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-blue-600"></i> সেটআপ ও কনফিগারেশন
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Gemini API Key</label>
+                    <input type="password" id="apiKey" placeholder="আপনার API key এখানে দিন" 
+                           class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                    <p class="text-xs text-slate-400 mt-1">API Key ব্রাউজারেই সংরক্ষিত থাকবে, কোনো সার্ভারে যাবে না।</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">প্রশ্নের ধরন নির্বাচন করুন</label>
+                    <select id="questionType" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                        <option value="cq">সৃজনশীল প্রশ্ন (Creative Question - CQ)</option>
+                        <option value="mcq">বহুনির্বাচনী প্রশ্ন (Multiple Choice - MCQ)</option>
+                        <option value="both">উভয় প্রকার (CQ + MCQ)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">প্রশ্নের সংখ্যা / সেট</label>
+                    <input type="number" id="questionCount" value="2" min="1" max="10" 
+                           class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">কাঙ্ক্ষিত মান / শ্রেণি (ঐচ্ছিক)</label>
+                    <input type="text" id="targetClass" placeholder="যেমন: নবম-দশম শ্রেণি / SSC" 
+                           class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Source Selection -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <h2 class="text-lg font-semibold text-slate-700 mb-4 border-b pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-book-open text-blue-600"></i> পাঠ্যবই বা অধ্যায়ের কনটেন্ট যোগ করুন
+            </h2>
+
+            <!-- Input Tabs -->
+            <div class="flex gap-4 border-b border-slate-200 mb-4">
+                <button id="tabPdf" onclick="switchTab('pdf')" class="pb-2 px-4 font-medium border-b-2 border-blue-600 text-blue-600">
+                    <i class="fa-solid fa-file-pdf"></i> PDF ফাইল আপলোড
+                </button>
+                <button id="tabText" onclick="switchTab('text')" class="pb-2 px-4 font-medium text-slate-500 hover:text-slate-700">
+                    <i class="fa-solid fa-align-left"></i> সরাসরি টেক্সট পেস্ট করুন
+                </button>
+            </div>
+
+            <!-- PDF Upload Section -->
+            <div id="sectionPdf" class="block">
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer" onclick="document.getElementById('pdfInput').click()">
+                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-blue-500 mb-2"></i>
+                    <p class="font-medium text-slate-700">এখানে ক্লিক করে পাঠ্যবইয়ের PDF আপলোড করুন</p>
+                    <p class="text-xs text-slate-400 mt-1">নির্দিষ্ট অধ্যায় বা পুরো বইয়ের ফাইল আপলোড করতে পারেন</p>
+                    <input type="file" id="pdfInput" accept="application/pdf" class="hidden" onchange="handleFileSelect(event)">
+                </div>
+                <div id="fileInfo" class="mt-3 text-sm text-slate-600 hidden flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle text-green-500"></i> <span id="fileName"></span>
+                </div>
+            </div>
+
+            <!-- Text Paste Section -->
+            <div id="sectionText" class="hidden">
+                <textarea id="textInput" rows="6" placeholder="পাঠ্যবইয়ের অধ্যায় বা বিষয়বস্তুর লেখাটি এখানে পেস্ট করুন..." 
+                          class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
+            </div>
+
+            <!-- Generate Button -->
+            <button onclick="generateQuestions()" id="generateBtn" 
+                    class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition flex justify-center items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> বোর্ড পরীক্ষার প্রশ্ন জেনারেট করুন
+            </button>
+        </div>
+
+        <!-- Output Section -->
+        <div id="outputContainer" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hidden">
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-file-pen text-green-600"></i> তৈরি হওয়া বোর্ড প্রশ্নপত্র
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="copyQuestions()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+                        <i class="fa-regular fa-copy"></i> কপি করুন
+                    </button>
+                    <button onclick="printQuestions()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm px-3 py-1.5 rounded-md flex items-center gap-1">
+                        <i class="fa-solid fa-print"></i> প্রিন্ট / PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question Output Content -->
+            <div id="questionArea" class="prose max-w-none text-slate-800 leading-relaxed space-y-4">
+                <!-- Generated content will appear here -->
+            </div>
+        </div>
+
+        <!-- Loader Spinner -->
+        <div id="loader" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+            <p class="mt-3 text-slate-600 font-medium">পাঠ্যবই বিশ্লেষণ করে প্রশ্ন তৈরি করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</p>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-100 text-center py-4 border-t border-slate-200 text-slate-500 text-sm mt-auto">
+        স্মার্ট এডুকেশন টুলস © ২০২৬ | তৈরি করা হয়েছে মাধ্যমিক ও উচ্চ মাধ্যমিক শিক্ষার্থীদের সহায়তায়
+    </footer>
+
+    <!-- App Logic Script -->
+    <script src="script.js"></script>
+</body>
+</html>
