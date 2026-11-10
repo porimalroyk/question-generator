@@ -104,7 +104,8 @@ ${contentText.substring(0, 10000)}
 """`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        // Updated to gemini-3.8-flash model endpoint
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -138,7 +139,7 @@ function formatMarkdown(text) {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/### (.*?)(<br>|\n)/g, '<h3 class="text-xl font-bold text-blue-800 mt-4 mb-2">$1</h3>')
-        .replace(/## (.*?)(<br>|\n)/g, '<h2 class="text-2xl font-bold text-blue-900 mt-6 mb-3 border-b pb-1">$1</h2>');
+        .replace(/## (.*?)(<br>|\n)/g, '<h2 class="text-2xl font-bold text-blue-900 mt-6 mb-3 border-b pb-1">$2</h2>');
     return formatted;
 }
 
